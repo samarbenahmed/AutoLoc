@@ -8,9 +8,5 @@ import java.util.Optional;
 
 public interface AgenceRepository extends JpaRepository<Agence, Long> {
 
-    List<Agence> findByVille(String ville);
 
-    Optional<Agence> findByNom(String nom);
-
-    boolean existsByNom(String nom);
 }

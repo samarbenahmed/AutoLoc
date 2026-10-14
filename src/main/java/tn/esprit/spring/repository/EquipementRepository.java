@@ -8,7 +8,5 @@ import java.util.Optional;
 
 public interface EquipementRepository extends JpaRepository<Equipement, Long> {
 
-    Optional<Equipement> findByLibelle(String libelle);
 
-    List<Equipement> findByLibelleContainingIgnoreCase(String libelle);
 }

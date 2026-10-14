@@ -8,11 +8,5 @@ import java.util.Optional;
 
 public interface ClientRepository extends JpaRepository<Client, Long> {
 
-    Optional<Client> findByEmail(String email);
 
-    Optional<Client> findByNumPermis(String numPermis);
-
-    boolean existsByEmail(String email);
-
-    List<Client> findByNomContainingIgnoreCase(String nom);
 }

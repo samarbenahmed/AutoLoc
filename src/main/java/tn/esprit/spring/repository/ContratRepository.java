@@ -8,7 +8,5 @@ import java.util.Optional;
 
 public interface ContratRepository extends JpaRepository<Contrat, Long> {
 
-    Optional<Contrat> findByReservation_IdReservation(Long reservationId);
 
-    List<Contrat> findByValide(boolean valide);
 }

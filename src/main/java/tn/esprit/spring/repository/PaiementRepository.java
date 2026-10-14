@@ -9,9 +9,4 @@ import java.util.List;
 
 public interface PaiementRepository extends JpaRepository<Paiement, Long> {
 
-    List<Paiement> findByContrat_IdContrat(Long contratId);
-
-    List<Paiement> findByModePaiement(ModePaiement modePaiement);
-
-    List<Paiement> findByDatePaiementBetween(LocalDate debut, LocalDate fin);
 }
