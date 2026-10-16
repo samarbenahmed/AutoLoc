@@ -1,54 +1,41 @@
 package tn.esprit.spring.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.spring.entity.Client;
-import tn.esprit.spring.service.ClientService;
+import tn.esprit.spring.service.IClientService;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/clients")
+@RequestMapping("/clients")
 @RequiredArgsConstructor
 public class ClientController {
 
-    private final ClientService clientService;
+    private final IClientService clientService;
 
-    @GetMapping
-    public ResponseEntity<List<Client>> findAll() {
-        return ResponseEntity.ok(clientService.findAll());
+    @PostMapping("/ajouterClient")
+    public Client ajouterClient(@RequestBody Client client) {
+        return clientService.ajouterClient(client);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Client> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(clientService.findById(id));
+    @PutMapping("/modifierClient")
+    public Client modifierClient(@RequestBody Client client) {
+        return clientService.modifierClient(client);
     }
 
-    @GetMapping("/email/{email}")
-    public ResponseEntity<Client> findByEmail(@PathVariable String email) {
-        return ResponseEntity.ok(clientService.findByEmail(email));
+    @GetMapping("/recupererTousClients")
+    public List<Client> getAllClient() {
+        return clientService.getAllClient();
     }
 
-    @GetMapping("/search")
-    public ResponseEntity<List<Client>> search(@RequestParam String nom) {
-        return ResponseEntity.ok(clientService.searchByNom(nom));
+    @GetMapping("/recupererClient/{id}")
+    public Client getClient(@PathVariable Long id) {
+        return clientService.getClient(id);
     }
 
-    @PostMapping
-    public ResponseEntity<Client> save(@RequestBody Client client) {
-        return new ResponseEntity<>(clientService.save(client), HttpStatus.CREATED);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Client> update(@PathVariable Long id, @RequestBody Client client) {
-        return ResponseEntity.ok(clientService.update(id, client));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        clientService.delete(id);
-        return ResponseEntity.noContent().build();
+    @DeleteMapping("/deleteClientById/{id}")
+    public void supprimerClientById(@PathVariable Long id) {
+        clientService.supprimerClientById(id);
     }
 }

@@ -1,5 +1,6 @@
 package tn.esprit.spring.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -42,6 +43,7 @@ public class Contrat {
     @Builder.Default
     @OneToMany(mappedBy = "contrat", fetch = FetchType.LAZY,
             cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private Set<Paiement> paiements = new LinkedHashSet<>();
 
     public void addPaiement(Paiement paiement) {

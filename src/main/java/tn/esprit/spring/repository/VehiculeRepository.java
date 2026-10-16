@@ -10,5 +10,14 @@ import java.util.Optional;
 
 public interface VehiculeRepository extends JpaRepository<Vehicule, Long> {
 
+    Optional<Vehicule> findByImmatriculation(String immatriculation);
+
+    boolean existsByImmatriculation(String immatriculation);
+
+    List<Vehicule> findByStatut(StatutVehicule statut);
+
+    List<Vehicule> findByCategorie(CategorieVehicule categorie);
+
+    List<Vehicule> findByAgence_IdAgence(Long idAgence);
 
 }

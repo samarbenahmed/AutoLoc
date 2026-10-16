@@ -1,49 +1,41 @@
 package tn.esprit.spring.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.spring.entity.Agence;
-import tn.esprit.spring.service.AgenceService;
+import tn.esprit.spring.service.IAgenceService;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/agences")
+@RequestMapping("/agences")
 @RequiredArgsConstructor
 public class AgenceController {
 
-    private final AgenceService agenceService;
+    private final IAgenceService agenceService;
 
-    @GetMapping
-    public ResponseEntity<List<Agence>> findAll() {
-        return ResponseEntity.ok(agenceService.findAll());
+    @PostMapping("/ajouterAgence")
+    public Agence ajouterAgence(@RequestBody Agence agence) {
+        return agenceService.ajouterAgence(agence);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Agence> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(agenceService.findById(id));
+    @PutMapping("/modifierAgence")
+    public Agence modifierAgence(@RequestBody Agence agence) {
+        return agenceService.modifierAgence(agence);
     }
 
-    @GetMapping("/ville/{ville}")
-    public ResponseEntity<List<Agence>> findByVille(@PathVariable String ville) {
-        return ResponseEntity.ok(agenceService.findByVille(ville));
+    @GetMapping("/recupererTousAgences")
+    public List<Agence> getAllAgence() {
+        return agenceService.getAllAgence();
     }
 
-    @PostMapping
-    public ResponseEntity<Agence> save(@RequestBody Agence agence) {
-        return new ResponseEntity<>(agenceService.save(agence), HttpStatus.CREATED);
+    @GetMapping("/recupererAgence/{id}")
+    public Agence getAgence(@PathVariable Long id) {
+        return agenceService.getAgence(id);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Agence> update(@PathVariable Long id, @RequestBody Agence agence) {
-        return ResponseEntity.ok(agenceService.update(id, agence));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        agenceService.delete(id);
-        return ResponseEntity.noContent().build();
+    @DeleteMapping("/deleteAgenceById/{id}")
+    public void supprimerAgenceById(@PathVariable Long id) {
+        agenceService.supprimerAgenceById(id);
     }
 }

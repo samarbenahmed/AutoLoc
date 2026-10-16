@@ -2,25 +2,30 @@ package tn.esprit.spring.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import tn.esprit.spring.entity.Reservation;
-import tn.esprit.spring.entity.Vehicule;
 import tn.esprit.spring.entity.enums.StatutReservation;
-import tn.esprit.spring.entity.enums.StatutVehicule;
 import tn.esprit.spring.exception.BadRequestException;
-import tn.esprit.spring.exception.ConflictException;
-import tn.esprit.spring.exception.NotFoundException;
-import tn.esprit.spring.repository.ClientRepository;
-import tn.esprit.spring.repository.ReservationRepository;
-import tn.esprit.spring.repository.VehiculeRepository;
-
-import java.time.LocalDate;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-
 public class ReservationService {
 
+    private final IReservationService reservationService;
 
+    public Reservation save(Reservation reservation) {
+        return reservationService.ajouterReservation(reservation);
+    }
+
+    public Reservation findById(Long id) {
+        return reservationService.getReservation(id);
+    }
+
+    public Reservation changerStatut(Long id, StatutReservation statut) {
+        if (statut == null) {
+            throw new BadRequestException("Le statut de la reservation est obligatoire");
+        }
+        Reservation reservation = reservationService.getReservation(id);
+        reservation.setStatut(statut);
+        return reservationService.modifierReservation(reservation);
+    }
 }

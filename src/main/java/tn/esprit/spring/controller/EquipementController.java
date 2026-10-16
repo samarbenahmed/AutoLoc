@@ -1,63 +1,41 @@
 package tn.esprit.spring.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.spring.entity.Equipement;
-import tn.esprit.spring.service.EquipementService;
+import tn.esprit.spring.service.IEquipementService;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/equipements")
+@RequestMapping("/equipements")
 @RequiredArgsConstructor
 public class EquipementController {
 
-    private final EquipementService equipementService;
+    private final IEquipementService equipementService;
 
-    @GetMapping
-    public ResponseEntity<List<Equipement>> findAll() {
-        return ResponseEntity.ok(equipementService.findAll());
+    @PostMapping("/ajouterEquipement")
+    public Equipement ajouterEquipement(@RequestBody Equipement equipement) {
+        return equipementService.ajouterEquipement(equipement);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Equipement> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(equipementService.findById(id));
+    @PutMapping("/modifierEquipement")
+    public Equipement modifierEquipement(@RequestBody Equipement equipement) {
+        return equipementService.modifierEquipement(equipement);
     }
 
-    @GetMapping("/search")
-    public ResponseEntity<List<Equipement>> search(@RequestParam String libelle) {
-        return ResponseEntity.ok(equipementService.searchByLibelle(libelle));
+    @GetMapping("/recupererTousEquipements")
+    public List<Equipement> getAllEquipement() {
+        return equipementService.getAllEquipement();
     }
 
-    @PostMapping
-    public ResponseEntity<Equipement> save(@RequestBody Equipement equipement) {
-        return new ResponseEntity<>(equipementService.save(equipement), HttpStatus.CREATED);
+    @GetMapping("/recupererEquipement/{id}")
+    public Equipement getEquipement(@PathVariable Long id) {
+        return equipementService.getEquipement(id);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Equipement> update(@PathVariable Long id, @RequestBody Equipement equipement) {
-        return ResponseEntity.ok(equipementService.update(id, equipement));
-    }
-
-    @PostMapping("/{equipementId}/vehicules/{vehiculeId}")
-    public ResponseEntity<Void> ajouterAuVehicule(@PathVariable Long equipementId,
-                                                   @PathVariable Long vehiculeId) {
-        equipementService.ajouterAuVehicule(vehiculeId, equipementId);
-        return ResponseEntity.noContent().build();
-    }
-
-    @DeleteMapping("/{equipementId}/vehicules/{vehiculeId}")
-    public ResponseEntity<Void> retirerDuVehicule(@PathVariable Long equipementId,
-                                                  @PathVariable Long vehiculeId) {
-        equipementService.retirerDuVehicule(vehiculeId, equipementId);
-        return ResponseEntity.noContent().build();
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        equipementService.delete(id);
-        return ResponseEntity.noContent().build();
+    @DeleteMapping("/deleteEquipementById/{id}")
+    public void supprimerEquipementById(@PathVariable Long id) {
+        equipementService.supprimerEquipementById(id);
     }
 }

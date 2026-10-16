@@ -2,21 +2,19 @@ package tn.esprit.spring.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import tn.esprit.spring.entity.Employe;
-import tn.esprit.spring.entity.enums.RoleEmploye;
-import tn.esprit.spring.exception.BadRequestException;
-import tn.esprit.spring.exception.ConflictException;
-import tn.esprit.spring.exception.NotFoundException;
-import tn.esprit.spring.repository.AgenceRepository;
-import tn.esprit.spring.repository.EmployeRepository;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-
 public class EmployeService {
 
+    private final IEmployeService employeService;
 
+    public Employe save(Employe employe) {
+        return employeService.ajouterEmploye(employe);
     }
+
+    public Employe findById(Long id) {
+        return employeService.getEmploye(id);
+    }
+}

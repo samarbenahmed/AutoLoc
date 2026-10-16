@@ -1,55 +1,41 @@
 package tn.esprit.spring.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.spring.entity.Employe;
-import tn.esprit.spring.entity.enums.RoleEmploye;
-import tn.esprit.spring.service.EmployeService;
+import tn.esprit.spring.service.IEmployeService;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/employes")
+@RequestMapping("/employes")
 @RequiredArgsConstructor
 public class EmployeController {
 
-    private final EmployeService employeService;
+    private final IEmployeService employeService;
 
-    @GetMapping
-    public ResponseEntity<List<Employe>> findAll() {
-        return ResponseEntity.ok(employeService.findAll());
+    @PostMapping("/ajouterEmploye")
+    public Employe ajouterEmploye(@RequestBody Employe employe) {
+        return employeService.ajouterEmploye(employe);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Employe> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(employeService.findById(id));
+    @PutMapping("/modifierEmploye")
+    public Employe modifierEmploye(@RequestBody Employe employe) {
+        return employeService.modifierEmploye(employe);
     }
 
-    @GetMapping("/agence/{agenceId}")
-    public ResponseEntity<List<Employe>> findByAgence(@PathVariable Long agenceId) {
-        return ResponseEntity.ok(employeService.findByAgence_IdAgence(agenceId));
+    @GetMapping("/recupererTousEmployes")
+    public List<Employe> getAllEmploye() {
+        return employeService.getAllEmploye();
     }
 
-    @GetMapping("/role/{role}")
-    public ResponseEntity<List<Employe>> findByRole(@PathVariable RoleEmploye role) {
-        return ResponseEntity.ok(employeService.findByRole(role));
+    @GetMapping("/recupererEmploye/{id}")
+    public Employe getEmploye(@PathVariable Long id) {
+        return employeService.getEmploye(id);
     }
 
-    @PostMapping
-    public ResponseEntity<Employe> save(@RequestBody Employe employe) {
-        return new ResponseEntity<>(employeService.save(employe), HttpStatus.CREATED);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Employe> update(@PathVariable Long id, @RequestBody Employe employe) {
-        return ResponseEntity.ok(employeService.update(id, employe));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        employeService.delete(id);
-        return ResponseEntity.noContent().build();
+    @DeleteMapping("/deleteEmployeById/{id}")
+    public void supprimerEmployeById(@PathVariable Long id) {
+        employeService.supprimerEmployeById(id);
     }
 }

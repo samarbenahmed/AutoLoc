@@ -2,20 +2,19 @@ package tn.esprit.spring.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import tn.esprit.spring.entity.Equipement;
-import tn.esprit.spring.entity.Vehicule;
-import tn.esprit.spring.exception.BadRequestException;
-import tn.esprit.spring.exception.NotFoundException;
-import tn.esprit.spring.repository.EquipementRepository;
-import tn.esprit.spring.repository.VehiculeRepository;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-
 public class EquipementService {
 
+    private final IEquipementService equipementService;
 
+    public Equipement save(Equipement equipement) {
+        return equipementService.ajouterEquipement(equipement);
+    }
+
+    public Equipement findById(Long id) {
+        return equipementService.getEquipement(id);
+    }
 }

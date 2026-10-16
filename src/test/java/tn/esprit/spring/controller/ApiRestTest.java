@@ -13,9 +13,7 @@ import tn.esprit.spring.autolocsamarbenahmed.AutoLocSamarBenahmedApplication;
 import tn.esprit.spring.entity.Agence;
 import tn.esprit.spring.entity.Equipement;
 import tn.esprit.spring.service.AgenceService;
-import tn.esprit.spring.service.ClientService;
 import tn.esprit.spring.service.EquipementService;
-import tn.esprit.spring.service.VehiculeService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -23,6 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Verifie le CRUD REST, les codes HTTP et surtout l'absence de boucle JSON.
+ * Tous les endpoints suivent le modele du module Vehicule : /agences/ajouterAgence, etc.
  */
 @SpringBootTest(classes = AutoLocSamarBenahmedApplication.class)
 @AutoConfigureMockMvc
@@ -31,8 +30,6 @@ class ApiRestTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private AgenceService agenceService;
-    @Autowired private VehiculeService vehiculeService;
-    @Autowired private ClientService clientService;
     @Autowired private EquipementService equipementService;
 
     @Autowired private tn.esprit.spring.repository.AgenceRepository agenceRepository;
@@ -68,69 +65,67 @@ class ApiRestTest {
         agenceRepository.deleteAllInBatch();
     }
 
-    private String json(Object value) throws Exception {
-        return objectMapper.writeValueAsString(value);
-    }
-
     @Test
     void crudAgenceRespecteLesCodesHttp() throws Exception {
-        mockMvc.perform(get("/api/agences"))
+        mockMvc.perform(get("/agences"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
 
-        mockMvc.perform(get("/api/agences/" + agenceId))
+        mockMvc.perform(get("/agences/recupererAgence/" + agenceId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nom").value("Agence REST"))
                 .andExpect(jsonPath("$.ville").value("Bizerte"));
 
-        mockMvc.perform(post("/api/agences")
+        mockMvc.perform(post("/agences/ajouterAgence")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nom\":\"Agence Tunis\",\"ville\":\"Tunis\"}"))
-                .andExpect(status().isCreated());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nom").value("Agence Tunis"));
 
-        mockMvc.perform(put("/api/agences/" + agenceId)
+        mockMvc.perform(put("/agences/modifierAgence")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"nom\":\"Agence Renommee\",\"ville\":\"Bizerte\",\"telephone\":\"20000000\"}"))
+                        .content("{\"idAgence\":" + agenceId + ",\"nom\":\"Agence Renommee\","
+                                + "\"ville\":\"Bizerte\",\"telephone\":\"20000000\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nom").value("Agence Renommee"));
 
-        mockMvc.perform(delete("/api/agences/" + agenceId))
-                .andExpect(status().isNoContent());
+        mockMvc.perform(delete("/agences/deleteAgenceById/" + agenceId))
+                .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/agences/" + agenceId))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/agences/recupererAgence/" + agenceId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
     }
 
     @Test
     void employeEtVehiculeSontSerialisesAvecLeurAgenceSansBoucle() throws Exception {
-        var employe = mockMvc.perform(post("/api/employes")
+        String employe = mockMvc.perform(post("/employes/ajouterEmploye")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nom\":\"Benahmed\",\"prenom\":\"Samar\",\"role\":\"AGENT\","
                                 + "\"agence\":{\"idAgence\":" + agenceId + "}}"))
-                .andExpect(status().isCreated())
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.role").value("AGENT"))
-                .andExpect(jsonPath("$.agence.idAgence").value(agenceId))
                 .andExpect(jsonPath("$.agence.employes").doesNotExist())
                 .andReturn().getResponse().getContentAsString();
         assertThat(employe).doesNotContain("\"employes\"");
+        assertThat(objectMapper.readTree(employe).get("agence").get("idAgence").asLong()).isEqualTo(agenceId);
 
-        var vehicule = mockMvc.perform(post("/api/vehicules")
+        String vehicule = mockMvc.perform(post("/vehicules/ajouterVehicule")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"immatriculation\":\"700 Tunis 7\",\"marque\":\"Peugeot\","
                                 + "\"modele\":\"208\",\"categorie\":\"SUV\",\"tarifJournalier\":55.50,"
                                 + "\"agence\":{\"idAgence\":" + agenceId + "}}"))
-                .andExpect(status().isCreated())
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.categorie").value("SUV"))
                 .andExpect(jsonPath("$.statut").value("DISPONIBLE"))
                 .andExpect(jsonPath("$.agence.ville").value("Bizerte"))
                 .andReturn().getResponse().getContentAsString();
 
-        // Aucune collection inverse ne doit apparaitre : pas de Vehicule -> Reservation -> Vehicule
         assertThat(vehicule).doesNotContain("reservations");
         assertThat(vehicule).doesNotContain("maintenances");
         assertThat(vehicule).doesNotContain("equipements");
 
-        mockMvc.perform(get("/api/vehicules"))
+        mockMvc.perform(get("/vehicules/recupererTousVehicules"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
@@ -140,13 +135,13 @@ class ApiRestTest {
         Equipement equipement = equipementService.save(
                 Equipement.builder().libelle("Radar").build());
 
-        var reponse = mockMvc.perform(get("/api/equipements/" + equipement.getIdEquipement()))
+        String reponse = mockMvc.perform(get("/equipements/recupererEquipement/" + equipement.getIdEquipement()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.libelle").value("Radar"))
                 .andReturn().getResponse().getContentAsString();
         assertThat(reponse).doesNotContain("vehicules");
 
-        var reponseClient = mockMvc.perform(get("/api/clients"))
+        String reponseClient = mockMvc.perform(get("/clients/recupererTousClients"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         assertThat(reponseClient).doesNotContain("reservations");
@@ -154,115 +149,132 @@ class ApiRestTest {
 
     @Test
     void leScenarioCompletReservationContratPaiementFonctionne() throws Exception {
-        var clientJson = mockMvc.perform(post("/api/clients")
+        String clientJson = mockMvc.perform(post("/clients/ajouterClient")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nom\":\"Bouzid\",\"prenom\":\"Malek\",\"email\":\"malek.bouzid@email.tn\"}"))
-                .andExpect(status().isCreated())
+                .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-        Long clientId = objectMapper.readTree(clientJson).get("idClient").asLong();
+        long clientId = objectMapper.readTree(clientJson).get("idClient").asLong();
 
-        var vehiculeJson = mockMvc.perform(post("/api/vehicules")
+        String vehiculeJson = mockMvc.perform(post("/vehicules/ajouterVehicule")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"immatriculation\":\"800 Tunis 8\",\"marque\":\"Dacia\","
                                 + "\"modele\":\"Sandero\",\"categorie\":\"BERLINE\",\"tarifJournalier\":50,"
                                 + "\"agence\":{\"idAgence\":" + agenceId + "}}"))
-                .andExpect(status().isCreated())
+                .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-        Long vehiculeId = objectMapper.readTree(vehiculeJson).get("idVehicule").asLong();
+        long vehiculeId = objectMapper.readTree(vehiculeJson).get("idVehicule").asLong();
 
-        var reservationJson = mockMvc.perform(post("/api/reservations")
+        String reservationJson = mockMvc.perform(post("/reservations/ajouterReservation")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"dateDebut\":\"2026-11-01\",\"dateFin\":\"2026-11-03\","
                                 + "\"client\":{\"idClient\":" + clientId + "},"
                                 + "\"vehicule\":{\"idVehicule\":" + vehiculeId + "}}"))
-                .andExpect(status().isCreated())
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.statut").value("EN_ATTENTE"))
                 .andReturn().getResponse().getContentAsString();
-        Long reservationId = objectMapper.readTree(reservationJson).get("idReservation").asLong();
+        long reservationId = objectMapper.readTree(reservationJson).get("idReservation").asLong();
 
-        mockMvc.perform(put("/api/reservations/" + reservationId + "/statut/CONFIRMEE"))
+        mockMvc.perform(put("/reservations/modifierReservation")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"idReservation\":" + reservationId + ",\"dateDebut\":\"2026-11-01\","
+                                + "\"dateFin\":\"2026-11-03\",\"statut\":\"CONFIRMEE\","
+                                + "\"client\":{\"idClient\":" + clientId + "},"
+                                + "\"vehicule\":{\"idVehicule\":" + vehiculeId + "}}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.statut").value("CONFIRMEE"));
 
-        var contratJson = mockMvc.perform(post("/api/contrats")
+        String contratJson = mockMvc.perform(post("/contrats/ajouterContrat")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"reservation\":{\"idReservation\":" + reservationId + "},\"valide\":true}"))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.montantTotal").value(150.0))
-                .andReturn().getResponse().getContentAsString();
-        Long contratId = objectMapper.readTree(contratJson).get("idContrat").asLong();
-
-        var contratComplet = mockMvc.perform(get("/api/contrats/" + contratId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.reservation.idReservation").value(reservationId))
                 .andReturn().getResponse().getContentAsString();
-        // Contrat -> paiements -> Paiement -> contrat ne doit pas reboucler
-        assertThat(contratComplet).doesNotContain("\"contrat\":");
+        assertThat(contratJson).contains("\"montantTotal\":150.00");
+        long contratId = objectMapper.readTree(contratJson).get("idContrat").asLong();
 
-        mockMvc.perform(post("/api/paiements")
+        String contratComplet = mockMvc.perform(get("/contrats/recupererContrat/" + contratId))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(objectMapper.readTree(contratComplet).get("reservation").get("idReservation").asLong())
+                .isEqualTo(reservationId);
+        assertThat(contratComplet).doesNotContain("\"contrat\":");
+        assertThat(contratComplet).doesNotContain("paiements");
+
+        mockMvc.perform(post("/paiements/ajouterPaiement")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"montant\":150,\"datePaiement\":\"2026-11-01\","
                                 + "\"modePaiement\":\"CARTE\",\"contrat\":{\"idContrat\":" + contratId + "}}"))
-                .andExpect(status().isCreated())
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.modePaiement").value("CARTE"));
 
-        mockMvc.perform(get("/api/paiements/contrat/" + contratId))
+        mockMvc.perform(get("/paiements/recupererTousPaiements"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
 
-        mockMvc.perform(delete("/api/contrats/" + contratId)).andExpect(status().isNoContent());
-        mockMvc.perform(delete("/api/reservations/" + reservationId)).andExpect(status().isNoContent());
+        mockMvc.perform(delete("/contrats/deleteContratById/" + contratId)).andExpect(status().isOk());
+        mockMvc.perform(delete("/reservations/deleteReservationById/" + reservationId)).andExpect(status().isOk());
     }
 
     @Test
     void unConflitDePeriodeRetourne409() throws Exception {
-        var clientJson = mockMvc.perform(post("/api/clients")
+        String clientJson = mockMvc.perform(post("/clients/ajouterClient")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nom\":\"Kon\",\"prenom\":\"Sami\"}"))
-                .andExpect(status().isCreated())
+                .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-        Long clientId = objectMapper.readTree(clientJson).get("idClient").asLong();
+        long clientId = objectMapper.readTree(clientJson).get("idClient").asLong();
 
-        var vehiculeJson = mockMvc.perform(post("/api/vehicules")
+        String vehiculeJson = mockMvc.perform(post("/vehicules/ajouterVehicule")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"immatriculation\":\"900 Tunis 9\",\"marque\":\"Fiat\","
                                 + "\"modele\":\"500\",\"categorie\":\"CITADINE\",\"tarifJournalier\":30,"
                                 + "\"agence\":{\"idAgence\":" + agenceId + "}}"))
                 .andReturn().getResponse().getContentAsString();
-        Long vehiculeId = objectMapper.readTree(vehiculeJson).get("idVehicule").asLong();
+        long vehiculeId = objectMapper.readTree(vehiculeJson).get("idVehicule").asLong();
 
         String payload = "{\"dateDebut\":\"2026-12-01\",\"dateFin\":\"2026-12-10\","
                 + "\"client\":{\"idClient\":" + clientId + "},"
                 + "\"vehicule\":{\"idVehicule\":" + vehiculeId + "}}";
 
-        mockMvc.perform(post("/api/reservations").contentType(MediaType.APPLICATION_JSON).content(payload))
-                .andExpect(status().isCreated());
+        mockMvc.perform(post("/reservations/ajouterReservation")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk());
 
         String chevauche = "{\"dateDebut\":\"2026-12-05\",\"dateFin\":\"2026-12-08\","
                 + "\"client\":{\"idClient\":" + clientId + "},"
                 + "\"vehicule\":{\"idVehicule\":" + vehiculeId + "}}";
-        mockMvc.perform(post("/api/reservations").contentType(MediaType.APPLICATION_JSON).content(chevauche))
+        mockMvc.perform(post("/reservations/ajouterReservation")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(chevauche))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409));
     }
 
     @Test
     void uneDonneeInvalideRetourne400() throws Exception {
-        mockMvc.perform(post("/api/clients")
+        mockMvc.perform(post("/clients/ajouterClient")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"prenom\":\"PasDeNom\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400));
 
-        mockMvc.perform(post("/api/clients")
+        mockMvc.perform(post("/clients/ajouterClient")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nom\":\"A\",\"prenom\":\"B\",\"email\":\"casse\"}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void unStatutInconnuRetourne400() throws Exception {
-        mockMvc.perform(get("/api/vehicules/statut/INCONNU"))
+    void unIdentifiantInvalideRetourne400() throws Exception {
+        mockMvc.perform(get("/vehicules/recupererVehicule/abc"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void unIdentifiantInconnuRetourne404() throws Exception {
+        mockMvc.perform(get("/clients/recupererClient/9999999"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
     }
 }

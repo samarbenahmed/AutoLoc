@@ -7,6 +7,6 @@ import java.util.List;
 
 public interface MaintenanceRepository extends JpaRepository<Maintenance, Long> {
 
-
+    List<Maintenance> findByVehicule_IdVehicule(Long idVehicule);
 
 }
